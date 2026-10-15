@@ -1,58 +1,57 @@
 import { NextResponse } from "next/server";
-import { FalkorDB } from "falkordb";
+import { getFalkorDB } from "@/lib/falkordb";
 
+let healthCache: {
+  healthy: boolean;
+  expiresAt: number;
+} | null = null;
 
 export async function GET() {
-  let client: FalkorDB | undefined;
+  if (healthCache && Date.now() < healthCache.expiresAt) {
+    return NextResponse.json(
+      {
+        status: healthCache.healthy ? "healthy" : "unhealthy",
+        database: healthCache.healthy ? "connected" : "unavailable",
+      },
+      { status: healthCache.healthy ? 200 : 503 }
+    );
+  }
 
   try {
-    const host = process.env.FALKORDB_HOST;
-    const port = Number(process.env.FALKORDB_PORT || 6379);
-    const username = process.env.FALKORDB_USERNAME;
-    const password = process.env.FALKORDB_PASSWORD;
-    const graphName = process.env.FALKORDB_GRAPH || "decisiongraph";
+    const client = await getFalkorDB();
 
-    if (!host || !password) {
-      throw new Error("FalkorDB environment variables are missing");
-    }
+    const graph = client.selectGraph(
+      process.env.FALKORDB_GRAPH || "decisiongraph"
+    );
 
-    client = await FalkorDB.connect({
-      socket: {
-        host,
-        port,
-        tls: process.env.FALKORDB_TLS === "true",
-        connectTimeout: 10000,
-      },
-      username,
-      password,
-    });
+    await graph.query("RETURN 1 AS ok");
 
-    const graph = client.selectGraph(graphName);
-    const result = await graph.query("RETURN 1 AS ok");
+    healthCache = {
+      healthy: true,
+      expiresAt: Date.now() + 30_000,
+    };
 
     return NextResponse.json({
       status: "healthy",
       database: "connected",
-      graph: graphName,
-      queryResult: result.data,
     });
   } catch (error) {
     console.error(
-      "FalkorDB health check failed:",
+      "Health check failed:",
       error instanceof Error ? error.message : "Unknown error"
     );
+
+    healthCache = {
+      healthy: false,
+      expiresAt: Date.now() + 5_000,
+    };
 
     return NextResponse.json(
       {
         status: "unhealthy",
-        database: "disconnected",
-        error: error instanceof Error ? error.message : "Unknown error",
+        database: "unavailable",
       },
       { status: 503 }
     );
-  } finally {
-    if (client) {
-      await client.close().catch(() => {});
-    }
   }
 }

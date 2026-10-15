@@ -7,15 +7,19 @@ let graphCache: {
   expiresAt: number;
 } | null = null;
 
-export async function GET(request: Request) {
-  const forceRefresh =
-    new URL(request.url).searchParams.get("refresh") === "1";
+let graphQueryInFlight: Promise<unknown> | null = null;
 
-  if (!forceRefresh && graphCache && Date.now() < graphCache.expiresAt) {
+export async function GET() {
+  if (graphCache && Date.now() < graphCache.expiresAt) {
     return NextResponse.json(graphCache.data);
   }
 
   try {
+    if (graphQueryInFlight) {
+      return NextResponse.json(await graphQueryInFlight);
+    }
+
+    const loadGraph = async () => {
     const client = await getFalkorDB();
 
     const graph = client.selectGraph(
@@ -93,7 +97,19 @@ export async function GET(request: Request) {
       expiresAt: Date.now() + 30_000,
     };
 
-    return NextResponse.json(responseData);
+    return responseData;
+    };
+
+    const pending = loadGraph();
+    graphQueryInFlight = pending;
+
+    try {
+      return NextResponse.json(await pending);
+    } finally {
+      if (graphQueryInFlight === pending) {
+        graphQueryInFlight = null;
+      }
+    }
   } catch (error) {
     console.error(
       "Graph API failed:",

@@ -17,8 +17,24 @@ type ImpactRecord = {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const system = body?.system;
+    let body: unknown;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body." },
+        { status: 400 }
+      );
+    }
+
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        { error: "Request body must be a JSON object." },
+        { status: 400 }
+      );
+    }
+    const system = (body as Record<string, unknown>).system;
 
     if (
       typeof system !== "string" ||
@@ -32,6 +48,31 @@ export async function POST(request: NextRequest) {
     }
 
     const systemName = system.trim();
+
+    const visitor = await checkVisitorLimit(
+      getVisitorId(request)
+    );
+
+    if (!visitor.allowed) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((visitor.reset - Date.now()) / 1000)
+      );
+
+      return NextResponse.json(
+        {
+          error: "Question limit reached. Please try again later.",
+          retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfterSeconds),
+          },
+        }
+      );
+    }
+
 
     const client = await getFalkorDB();
     const graph = client.selectGraph(
@@ -74,30 +115,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Gemini API key is not configured", evidence },
         { status: 503 }
-      );
-    }
-
-    const visitor = await checkVisitorLimit(
-      getVisitorId(request)
-    );
-
-    if (!visitor.allowed) {
-      const retryAfterSeconds = Math.max(
-        1,
-        Math.ceil((visitor.reset - Date.now()) / 1000)
-      );
-
-      return NextResponse.json(
-        {
-          error: "Question limit reached. Please try again later.",
-          retryAfterSeconds,
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(retryAfterSeconds),
-          },
-        }
       );
     }
 

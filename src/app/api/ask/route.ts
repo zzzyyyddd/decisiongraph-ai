@@ -103,8 +103,24 @@ async function generateWithRetry(
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const question = body?.question;
+    let body: unknown;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body." },
+        { status: 400 }
+      );
+    }
+
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        { error: "Request body must be a JSON object." },
+        { status: 400 }
+      );
+    }
+    const question = (body as Record<string, unknown>).question;
 
     if (
       typeof question !== "string" ||
@@ -193,6 +209,13 @@ Rules:
       });
 
       const calls = response.functionCalls ?? [];
+
+      if (calls.length > 3) {
+        return NextResponse.json(
+          { error: "Too many tool calls requested. Please simplify your question." },
+          { status: 422 }
+        );
+      }
 
       if (calls.length === 0) {
         return NextResponse.json({
