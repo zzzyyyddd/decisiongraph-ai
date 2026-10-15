@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
 
     for (let round = 0; round < 3; round++) {
       const response = await generateWithRetry(ai, {
-        model: "gemini-3.8-flash",
+        model: "gemini-3.5-flash-lite",
         contents,
         config: {
           systemInstruction: `

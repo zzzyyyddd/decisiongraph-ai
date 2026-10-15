@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = await generateLimitedContent(ai, {
-      model: "gemini-3.8-flash",
+      model: "gemini-3.5-flash-lite",
       contents: `
 You are DecisionGraph AI, an enterprise dependency impact analyst.
 
