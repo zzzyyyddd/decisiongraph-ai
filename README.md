@@ -13,6 +13,32 @@ https://decisiongraph-ai-black.vercel.app
 
 No installation or local server is required to explore the deployed application.
 
+## Product Screenshots
+
+### 1. DecisionGraph AI Dashboard
+
+![DecisionGraph AI Dashboard](docs/images/01-dashboard.png)
+
+The operational intelligence dashboard powered by FalkorDB.
+
+### 2. What-If Impact Simulator
+
+![Stripe Outage Impact Simulation](docs/images/03-impact-simulator.jpeg)
+
+Simulate a Stripe outage and trace its impact across six downstream systems.
+
+### 3. Knowledge Graph Explorer
+
+![FalkorDB Knowledge Graph Explorer](docs/images/02-knowledge-graph.jpeg)
+
+Explore live graph relationships and highlighted outage propagation paths.
+
+### 4. AI Assistant with Tool Execution Trace
+
+![DecisionGraph AI Assistant](docs/images/04-ai-assistant.png)
+
+Ask natural-language questions and inspect the FalkorDB-backed tool execution trace.
+
 ## The Problem
 
 Modern applications depend on interconnected services, databases, APIs, and external providers.
