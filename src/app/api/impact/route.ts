@@ -83,9 +83,25 @@ export async function GET(request: NextRequest) {
 
     const affectedSystems = result.data ?? [];
 
+    const affectedCount = new Set(
+      affectedSystems
+        .map((row) => {
+          if (
+            typeof row === "object" &&
+            row !== null &&
+            "affected_system" in row &&
+            typeof row.affected_system === "string"
+          ) {
+            return row.affected_system;
+          }
+          return null;
+        })
+        .filter((name): name is string => name !== null)
+    ).size;
+
     return NextResponse.json({
       scenario: `${system} outage`,
-      affectedCount: affectedSystems.length,
+      affectedCount,
       affectedSystems,
       source: "FalkorDB Knowledge Graph",
     });
