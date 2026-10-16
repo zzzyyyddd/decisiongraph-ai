@@ -158,6 +158,50 @@ DecisionGraph AI provides three tools for Gemini:
 
 These tools retrieve graph information to support AI-generated answers.
 
+
+## Graph Data Model and Cypher
+
+DecisionGraph AI stores infrastructure components as `System`
+nodes connected by directed `DEPENDS_ON` relationships.
+
+For example, Checkout Service depends on Payment Service,
+which in turn depends on Stripe.
+
+### Impact Analysis
+
+The following query traces systems affected by an outage:
+
+    MATCH p=(affected:System)-[:DEPENDS_ON*1..8]->
+    (provider:System {name: $system})
+    RETURN affected.name AS affected_system,
+           length(p) AS dependency_depth,
+           [n IN nodes(p) | n.name] AS dependency_path
+    ORDER BY dependency_depth
+    LIMIT 100
+
+The application counts unique affected system names among
+the returned paths. The 100-path limit bounds the demo query.
+
+### Graph-Grounded AI Tools
+
+- `list_systems`: retrieves available systems.
+- `analyze_impact`: traces affected systems and paths.
+- `find_dependencies`: retrieves direct dependencies.
+
+All three tools execute Cypher queries against FalkorDB.
+Gemini can use their results to generate graph-grounded answers,
+and the interface displays tool execution traces.
+
+## Hackathon Track
+
+**Agents That Act on Connected Data**
+
+## AI Assistance Disclosure
+
+AI-assisted tools were used for coding, debugging, and documentation.
+The developer directed the product design, reviewed implementation,
+and tested the application. Gemini also powers runtime AI analysis.
+
 ## API Endpoints
 
 | Endpoint | Purpose |
