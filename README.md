@@ -35,7 +35,7 @@ Explore live graph relationships and highlighted outage propagation paths.
 
 ### 4. AI Assistant with Tool Execution Trace
 
-![DecisionGraph AI Assistant](docs/images/04-ai-assistant.png)
+![DecisionGraph AI Assistant](docs/images/04-ai-assistant.jpeg)
 
 Ask natural-language questions and inspect the FalkorDB-backed tool execution trace.
 
